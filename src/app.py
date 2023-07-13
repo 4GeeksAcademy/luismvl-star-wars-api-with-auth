@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
+from utils import *
 from admin import setup_admin
 from models import db, User, Character, Planet
 
@@ -38,51 +39,37 @@ def sitemap():
 # Users endpoints
 
 @app.route('/users', methods=['GET'])
-def get_all_users():
-    users = User.query.all()
+def all_users():
+    users = get_all_users()
     serialized_users = list(map(lambda x: x.serialize(), users))
     return serialized_users, 200
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    user = User.query.get(user_id)
+    user = get_user_by_id(user_id)
+    if (user is None):
+        raise APIException('User not found', status_code=404)
     return user.serialize(), 200
 
 @app.route('/users', methods=['POST'])
 def create_user(): 
     request_body = request.get_json()
-    newUser = User(username=request_body['username'],email=request_body['email'], password=request_body['password'], is_active=False)
-    db.session.add(newUser)
-    db.session.commit()
-    return jsonify(newUser.serialize()), 200
+    user = save_new_user(request_body['username'], request_body['email'], request_body['password'], request_body['is_active'])
+    return user.serialize(), 200
 
 @app.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id): 
     request_body = request.get_json()
-    user_to_update = User.query.get(user_id)
-    if (user_to_update is None):
-        raise APIException('User not found', status_code=400)
-    
-    if ('email') in request_body:
-        user_to_update.email = request_body['email']
-
-    if ('password') in request_body:
-        user_to_update.password = request_body['password']
-
-    if ('is_active') in request_body:
-        user_to_update.is_active = request_body['is_active']
-
-    db.session.commit()
-    return jsonify(user_to_update.serialize()), 200
+    updated_user = update_user_by_id(user_id, request_body)
+    return updated_user.serialize(), 200
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    user = User.query.get(user_id)
-    if user is None:
-        return Response(status=404)   
-    db.session.delete(user)
-    db.session.commit()
-    return Response(status=204)
+    result = delete_user_by_id(user_id)
+    if result:
+        return Response(status=204)
+    else:
+        return { 'message': 'User not found' }, 404
 
 # @app.route('/users/favorites', methods=['GET'])
 # def get_favorites(): 

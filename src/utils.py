@@ -1,4 +1,6 @@
 from flask import jsonify, url_for
+from models import db, User, Character, Planet
+
 
 class APIException(Exception):
     status_code = 400
@@ -15,10 +17,12 @@ class APIException(Exception):
         rv['message'] = self.message
         return rv
 
+
 def has_no_empty_params(rule):
     defaults = rule.defaults if rule.defaults is not None else ()
     arguments = rule.arguments if rule.arguments is not None else ()
     return len(defaults) >= len(arguments)
+
 
 def generate_sitemap(app):
     links = ['/admin/']
@@ -30,7 +34,8 @@ def generate_sitemap(app):
             if "/admin/" not in url:
                 links.append(url)
 
-    links_html = "".join(["<li><a href='" + y + "'>" + y + "</a></li>" for y in links])
+    links_html = "".join(["<li><a href='" + y + "'>" +
+                         y + "</a></li>" for y in links])
     return """
         <div style="text-align: center;">
         <img style="max-height: 80px" src='https://storage.googleapis.com/breathecode/boilerplates/rigo-baby.jpeg' />
@@ -39,3 +44,48 @@ def generate_sitemap(app):
         <p>Start working on your proyect by following the <a href="https://start.4geeksacademy.com/starters/flask" target="_blank">Quick Start</a></p>
         <p>Remember to specify a real endpoint path like: </p>
         <ul style="text-align: left;">"""+links_html+"</ul></div>"
+
+
+def get_all_users():
+    users = User.query.all()
+    return users
+
+
+def get_user_by_id(id):
+    user = User.query.get(id)
+    return user
+
+
+def save_new_user(username, email, password, is_active):
+    user = User(username=username, email=email,
+                password=password, is_active=is_active)
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def update_user_by_id(id, properties):
+    user = User.query.get(id)
+
+    if ('username') in properties:
+        user.username = properties['username']
+
+    if ('email') in properties:
+        user.email = properties['email']
+
+    if ('password') in properties:
+        user.password = properties['password']
+
+    if ('is_active') in properties:
+        user.is_active = properties['is_active']
+
+    db.session.commit()
+    return user
+
+def delete_user_by_id(id):
+    user = User.query.get(id)
+    if user is None:
+        return False
+    db.session.delete(user)
+    db.session.commit()
+    return True
