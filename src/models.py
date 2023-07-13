@@ -7,6 +7,7 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
@@ -62,6 +63,7 @@ class Planet(db.Model):
     rotation_period = db.Column(db.Integer, nullable=False)
     population = db.Column(db.Integer, nullable=False)
     surface_water = db.Column(db.Integer, nullable=False)
+
     def serialize(self):
         return {
             "id": self.id,
@@ -69,14 +71,14 @@ class Planet(db.Model):
             "diameter": self.diameter,
             "rotation_period": self.rotation_period,
             "population": self.population,
-            "surface_water": self.surface_water
+            "surface_water": self.surface_water,
         }
-
 
 favorite_characters = db.Table('favorite_characters',
                                db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
                                db.Column('character_id', db.Integer, db.ForeignKey('characters.id'))
                                )
+
 favorite_planets = db.Table('favorite_planets',
                                db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
                                db.Column('planet_id', db.Integer, db.ForeignKey('planets.id'))
