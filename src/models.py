@@ -10,7 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(120), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+    is_active = db.Column(db.Boolean(), unique=False, nullable=False, default=False)
     favorite_characters = db.relationship('Character', secondary='favorite_characters', backref='users', lazy=True)
     favorite_planets = db.relationship('Planet', secondary='favorite_planets', backref='users', lazy=True)
 
@@ -21,8 +21,10 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
+            "username": self.username,
             "favorite_characters": [fav.serialize() for fav in self.favorite_characters],
             "favorite_planets": [fav.serialize() for fav in self.favorite_planets],
+            "is_active": self.is_active
         }
 
 class Character(db.Model):
@@ -63,6 +65,7 @@ class Planet(db.Model):
     rotation_period = db.Column(db.Integer, nullable=False)
     population = db.Column(db.Integer, nullable=False)
     surface_water = db.Column(db.Integer, nullable=False)
+    gravity = db.Column(db.String(250), nullable=False)
 
     def serialize(self):
         return {
@@ -72,6 +75,7 @@ class Planet(db.Model):
             "rotation_period": self.rotation_period,
             "population": self.population,
             "surface_water": self.surface_water,
+            "gravity": self.gravity,
         }
 
 favorite_characters = db.Table('favorite_characters',

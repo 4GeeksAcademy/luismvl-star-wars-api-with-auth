@@ -51,7 +51,7 @@ def get_user(user_id):
 @app.route('/users', methods=['POST'])
 def create_user(): 
     request_body = request.get_json()
-    newUser = User(email=request_body['email'], password=request_body['password'], is_active=False)
+    newUser = User(username=request_body['username'],email=request_body['email'], password=request_body['password'], is_active=False)
     db.session.add(newUser)
     db.session.commit()
     return jsonify(newUser.serialize()), 200
@@ -130,7 +130,7 @@ def update_character(character_id):
     request_body = request.get_json()
     character_to_update = Character.query.get(character_id)
     if (character_to_update is None):
-        raise APIException('User not found', status_code=400)
+        raise APIException('Character not found', status_code=400)
     
     if ('name') in request_body:
         character_to_update.name = request_body['name']
@@ -185,52 +185,50 @@ def create_planet():
     name = request_body.get('name')
     diameter = request_body.get('diameter')
     rotation_period = request_body.get('rotation_period')
-    population = request_body.get('population', None)
-    surface_water = request_body.get('surface_water', None)
+    population = request_body.get('population')
+    surface_water = request_body.get('surface_water')
+    gravity = request_body.get('gravity')
 
     newPlanet = Planet(name=name, diameter=diameter, rotation_period=rotation_period, 
-                       population=population,surface_water=surface_water)
+                       population=population,surface_water=surface_water, gravity=gravity)
     db.session.add(newPlanet)
     db.session.commit()
     return jsonify(newPlanet.serialize()), 200
 
-@app.route('/people/<int:character_id>', methods=['PUT'])
-def update_planet(character_id): 
+@app.route('/planets/<int:planet_id>', methods=['PUT'])
+def update_planet(planet_id): 
     request_body = request.get_json()
-    character_to_update = Character.query.get(character_id)
-    if (character_to_update is None):
-        raise APIException('User not found', status_code=400)
+    planet_to_update = Planet.query.get(planet_id)
+    if (planet_to_update is None):
+        raise APIException('Planet not found', status_code=400)
     
     if ('name') in request_body:
-        character_to_update.name = request_body['name']
+        planet_to_update.name = request_body['name']
 
-    if ('height') in request_body:
-        character_to_update.height = request_body['height']
+    if ('diameter') in request_body:
+        planet_to_update.diameter = request_body['diameter']
 
-    if ('mass') in request_body:
-        character_to_update.mass = request_body['mass']
+    if ('rotation_period') in request_body:
+        planet_to_update.rotation_period = request_body['rotation_period']
     
-    if ('hair_color') in request_body:
-        character_to_update.hair_color = request_body['hair_color']
+    if ('population') in request_body:
+        planet_to_update.population = request_body['population']
 
-    if ('eye_color') in request_body:
-        character_to_update.eye_color = request_body['eye_color']
+    if ('surface_water') in request_body:
+        planet_to_update.surface_water = request_body['surface_water']
 
-    if ('skin_color') in request_body:
-        character_to_update.skin_color = request_body['skin_color']
-
-    if ('birth_year') in request_body:
-        character_to_update.birth_year = request_body['birth_year']
+    if ('gravity') in request_body:
+        planet_to_update.gravity = request_body['gravity']
 
     db.session.commit()
-    return jsonify(character_to_update.serialize()), 200
+    return jsonify(planet_to_update.serialize()), 200
 
-@app.route('/people/<int:character_id>', methods=['DELETE'])
-def delete_planet(character_id):
-    character = Character.query.get(character_id)
-    if character is None:
+@app.route('/planets/<int:planet_id>', methods=['DELETE'])
+def delete_planet(planet_id):
+    planet = Planet.query.get(planet_id)
+    if planet is None:
         return Response(status=404)   
-    db.session.delete(character)
+    db.session.delete(planet)
     db.session.commit()
     return Response(status=204)
 
