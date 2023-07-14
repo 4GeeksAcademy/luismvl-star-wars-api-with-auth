@@ -16,7 +16,8 @@ app.url_map.strict_slashes = False
 
 db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://")
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
+        "postgres://", "postgresql://")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -27,22 +28,28 @@ CORS(app)
 setup_admin(app)
 
 # Handle/serialize errors like a JSON object
+
+
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
 
 # generate sitemap with all your endpoints
+
+
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
 
 # Users endpoints
 
+
 @app.route('/users', methods=['GET'])
 def all_users():
     users = get_all_users()
     serialized_users = list(map(lambda x: x.serialize(), users))
     return serialized_users, 200
+
 
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
@@ -51,17 +58,32 @@ def get_user(user_id):
         raise APIException('User not found', status_code=404)
     return user.serialize(), 200
 
+
 @app.route('/users', methods=['POST'])
-def create_user(): 
+def create_user():
     request_body = request.get_json()
-    user = save_new_user(request_body['username'], request_body['email'], request_body['password'], request_body['is_active'])
+
+    # checks if there is a missing value in request
+    missing_values = validate_user(request_body)
+    if len(missing_values) > 0:
+        return {'message': f'Missing value for: {", ".join(missing_values)}'}
+
+    # if_active es opcional
+    if 'is_active' not in request_body:
+        request_body['is_ative'] = False
+
+    user = save_new_user(request_body['username'], request_body['email'],
+                         request_body['password'], request_body['is_active'])
+
     return user.serialize(), 200
 
+
 @app.route('/users/<int:user_id>', methods=['PUT'])
-def update_user(user_id): 
+def update_user(user_id):
     request_body = request.get_json()
     updated_user = update_user_by_id(user_id, request_body)
     return updated_user.serialize(), 200
+
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
@@ -69,10 +91,10 @@ def delete_user(user_id):
     if result:
         return Response(status=204)
     else:
-        return { 'message': 'User not found' }, 404
+        return {'message': 'User not found'}, 404
 
 # @app.route('/users/favorites', methods=['GET'])
-# def get_favorites(): 
+# def get_favorites():
 #     user = User.query.get(1)
 #     favorite_characters = list(map(lambda x: x.serialize(), user.favorite_characters))
 #     favorite_planets = list(map(lambda x: x.serialize(), user.favorite_planets))
@@ -80,19 +102,22 @@ def delete_user(user_id):
 
 # Characters endpoints
 
+
 @app.route('/people', methods=['GET'])
 def get_all_characters():
     characters = Character.query.all()
     serialized_characters = list(map(lambda x: x.serialize(), characters))
     return serialized_characters, 200
 
+
 @app.route('/people/<int:character_id>', methods=['GET'])
 def get_character(character_id):
     character = Character.query.get(character_id)
     return character.serialize(), 200
 
+
 @app.route('/people', methods=['POST'])
-def create_character(): 
+def create_character():
     request_body = request.get_json()
 
     name = request_body.get('name')
@@ -112,13 +137,14 @@ def create_character():
     db.session.commit()
     return jsonify(newCharacter.serialize()), 200
 
+
 @app.route('/people/<int:character_id>', methods=['PUT'])
-def update_character(character_id): 
+def update_character(character_id):
     request_body = request.get_json()
     character_to_update = Character.query.get(character_id)
     if (character_to_update is None):
         raise APIException('Character not found', status_code=400)
-    
+
     if ('name') in request_body:
         character_to_update.name = request_body['name']
 
@@ -127,7 +153,7 @@ def update_character(character_id):
 
     if ('mass') in request_body:
         character_to_update.mass = request_body['mass']
-    
+
     if ('hair_color') in request_body:
         character_to_update.hair_color = request_body['hair_color']
 
@@ -143,16 +169,18 @@ def update_character(character_id):
     db.session.commit()
     return jsonify(character_to_update.serialize()), 200
 
+
 @app.route('/people/<int:character_id>', methods=['DELETE'])
 def delete_character(character_id):
     character = Character.query.get(character_id)
     if character is None:
-        return Response(status=404)   
+        return Response(status=404)
     db.session.delete(character)
     db.session.commit()
     return Response(status=204)
 
 # Planets endpoint
+
 
 @app.route('/planets', methods=['GET'])
 def get_all_planets():
@@ -160,13 +188,15 @@ def get_all_planets():
     serialized_planets = list(map(lambda x: x.serialize(), planets))
     return serialized_planets, 200
 
+
 @app.route('/planets/<int:planets_id>', methods=['GET'])
 def get_planet(planets_id):
     planet = Planet.query.get(planets_id)
     return planet.serialize(), 200
 
+
 @app.route('/planets', methods=['POST'])
-def create_planet(): 
+def create_planet():
     request_body = request.get_json()
 
     name = request_body.get('name')
@@ -176,19 +206,20 @@ def create_planet():
     surface_water = request_body.get('surface_water')
     gravity = request_body.get('gravity')
 
-    newPlanet = Planet(name=name, diameter=diameter, rotation_period=rotation_period, 
-                       population=population,surface_water=surface_water, gravity=gravity)
+    newPlanet = Planet(name=name, diameter=diameter, rotation_period=rotation_period,
+                       population=population, surface_water=surface_water, gravity=gravity)
     db.session.add(newPlanet)
     db.session.commit()
     return jsonify(newPlanet.serialize()), 200
 
+
 @app.route('/planets/<int:planet_id>', methods=['PUT'])
-def update_planet(planet_id): 
+def update_planet(planet_id):
     request_body = request.get_json()
     planet_to_update = Planet.query.get(planet_id)
     if (planet_to_update is None):
         raise APIException('Planet not found', status_code=400)
-    
+
     if ('name') in request_body:
         planet_to_update.name = request_body['name']
 
@@ -197,7 +228,7 @@ def update_planet(planet_id):
 
     if ('rotation_period') in request_body:
         planet_to_update.rotation_period = request_body['rotation_period']
-    
+
     if ('population') in request_body:
         planet_to_update.population = request_body['population']
 
@@ -210,14 +241,16 @@ def update_planet(planet_id):
     db.session.commit()
     return jsonify(planet_to_update.serialize()), 200
 
+
 @app.route('/planets/<int:planet_id>', methods=['DELETE'])
 def delete_planet(planet_id):
     planet = Planet.query.get(planet_id)
     if planet is None:
-        return Response(status=404)   
+        return Response(status=404)
     db.session.delete(planet)
     db.session.commit()
     return Response(status=204)
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':

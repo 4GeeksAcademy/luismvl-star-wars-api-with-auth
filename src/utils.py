@@ -64,6 +64,15 @@ def save_new_user(username, email, password, is_active):
     return user
 
 
+def validate_user(user_dict):
+    required_values = ['username', 'email', 'password']
+    missing_values = []
+    for key in required_values:
+        if key not in user_dict:
+            missing_values.append(key)
+    return missing_values
+
+
 def update_user_by_id(id, properties):
     user = User.query.get(id)
 
@@ -81,6 +90,7 @@ def update_user_by_id(id, properties):
 
     db.session.commit()
     return user
+
 
 def delete_user_by_id(id):
     user = User.query.get(id)
