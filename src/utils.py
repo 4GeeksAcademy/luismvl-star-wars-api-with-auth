@@ -46,6 +46,8 @@ def generate_sitemap(app):
         <ul style="text-align: left;">"""+links_html+"</ul></div>"
 
 
+# Users utils
+
 def get_all_users():
     users = User.query.all()
     return users
@@ -56,9 +58,9 @@ def get_user_by_id(id):
     return user
 
 
-def save_new_user(username, email, password, is_active):
-    user = User(username=username, email=email,
-                password=password, is_active=is_active)
+def save_new_user(properties):
+    user = User(username=properties['username'], email=properties['email'],
+                password=properties['password'], is_active=properties['is_active'])
     db.session.add(user)
     db.session.commit()
     return user
@@ -75,20 +77,16 @@ def validate_user(user_dict):
 
 def update_user_by_id(id, properties):
     user = User.query.get(id)
+    if user is None:
+        return user
 
-    if ('username') in properties:
-        user.username = properties['username']
-
-    if ('email') in properties:
-        user.email = properties['email']
-
-    if ('password') in properties:
-        user.password = properties['password']
-
-    if ('is_active') in properties:
-        user.is_active = properties['is_active']
+    for key in user.__dict__.keys():
+        print('en el for')
+        if key in properties:
+            setattr(user, key, properties[key])
 
     db.session.commit()
+
     return user
 
 
@@ -97,5 +95,112 @@ def delete_user_by_id(id):
     if user is None:
         return False
     db.session.delete(user)
+    db.session.commit()
+    return True
+
+
+# Characters utils
+
+def get_all_characters():
+    characters = Character.query.all()
+    return characters
+
+
+def get_character_by_id(id):
+    character = Character.query.get(id)
+    return character
+
+
+def save_new_character(properties):
+    character = Character(name=properties['name'], height=properties['height'],
+                          mass=properties['mass'], hair_color=properties.get('hair_color'), eye_color=properties.get('eye_color'),
+                          skin_color=properties.get('skin_color'), birth_year=properties.get('birth_date'), gender=properties.get('gender'),
+                          description=properties.get('description'), planet_id=properties['planet_id'])
+    db.session.add(character)
+    db.session.commit()
+    return character
+
+
+def validate_character(character_dict):
+    required_values = ['name', 'height', 'mass',  'planet_id']
+    missing_values = []
+    for key in required_values:
+        if key not in character_dict:
+            missing_values.append(key)
+    return missing_values
+
+
+def update_character_by_id(id, properties):
+    character = Character.query.get(id)
+
+    if character is None:
+        return character
+
+    for key in character.__dict__.keys():
+        if key in properties:
+            setattr(character, key, properties[key])
+
+    db.session.commit()
+    return character
+
+
+def delete_character_by_id(id):
+    character = Character.query.get(id)
+    if character is None:
+        return False
+    db.session.delete(character)
+    db.session.commit()
+    return True
+
+
+# Planets utils
+
+def get_all_planets():
+    planets = Planet.query.all()
+    return planets
+
+
+def get_planet_by_id(id):
+    planet = Planet.query.get(id)
+    return planet
+
+
+def save_new_planet(properties):
+    character = Planet(name=properties['name'], diameter=properties['diameter'],
+                       rotation_period=properties['rotation_period'], population=properties['population'],
+                       surface_water=properties['surface_water'], gravity=properties['gravity'])
+    db.session.add(character)
+    db.session.commit()
+    return character
+
+
+def validate_planet(planet_dict):
+    required_values = ['name', 'diameter', 'gravity']
+    missing_values = []
+    for key in required_values:
+        if key not in planet_dict:
+            missing_values.append(key)
+    return missing_values
+
+
+def update_planet_by_id(id, properties):
+    planet = Planet.query.get(id)
+
+    if planet is None:
+        return planet
+
+    for key in planet.__dict__.keys():
+        if key in properties:
+            setattr(planet, key, properties[key])
+
+    db.session.commit()
+    return planet
+
+
+def delete_planet_by_id(id):
+    planet = Planet.query.get(id)
+    if planet is None:
+        return False
+    db.session.delete(planet)
     db.session.commit()
     return True
