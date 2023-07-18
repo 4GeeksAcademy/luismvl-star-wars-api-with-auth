@@ -6,9 +6,17 @@ from flask import Flask, request, jsonify, url_for, Response
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
+
 from utils import *
 from admin import setup_admin
 from models import db, User, Character, Planet
+
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -20,6 +28,11 @@ if db_url is not None:
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config["JWT_SECRET_KEY"] = "wewRe1lpRaJlSpi!lqEr"
+jwt = JWTManager(app)
+
+bcrypt = Bcrypt(app)
 
 MIGRATE = Migrate(app, db)
 db.init_app(app)
@@ -39,6 +52,28 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
+
+
+# Auth endpoints
+
+@app.route("/token", methods=["POST"])
+def login():
+    email = request.json.get("email", None)
+    password = request.json.get("password", None)
+    if not email or not password:
+        return {'message': 'Email and password are required.'}, 400
+
+    user = get_user_by_email(email)
+    if user is None:
+        return {'message': 'User not found'}, 404
+
+    is_pswd_correct = bcrypt.check_password_hash(user.password, password)
+
+    if not is_pswd_correct:
+        return {'message': 'Password is incorrect'}, 401
+
+    access_token = create_access_token(identity=user.id)
+    return {"user": user.serialize(), 'token': access_token}, 200
 
 
 # Users endpoints
@@ -71,6 +106,8 @@ def create_user():
     if 'is_active' not in request_body:
         request_body['is_ative'] = False
 
+    request_body['password'] = bcrypt.generate_password_hash(
+        request_body['password']).decode('utf-8')
     user = save_new_user(request_body)
 
     return user.serialize(), 200
